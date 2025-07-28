@@ -1,12 +1,19 @@
-import streamlit as st
+import sys
+from PyQt6.QtWidgets import QApplication
+from ui.main_window import MainWindow
 
-st.title("Formulario de registro")
 
-with st.form("formulario_registro"):
-    id = st.text_input("Id ")
-    nombre = st.text_input("Nombre")
+def main():
+    app = QApplication(sys.argv)
 
-    insertar = st.form_submit_button("Insertar")
-    start = st.form_submit_button("Start")
-    commit = st.form_submit_button("Commit")
-    roll = st.form_submit_button("Rollback")
+    try:
+        main_window = MainWindow()
+        main_window.show()
+    except Exception as e:
+        print(e)
+
+    sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    main()

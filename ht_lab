@@ -1,0 +1,14 @@
+crear un formulario con una base de datos con los siguientes campos:
+id (AI) y nombre
+
+dentro del formulario crear los botones:
+
+start
+insert
+commit
+rollback
+
+
+# Librerias usadas
+PyQt6
+mysql-connector-python version 8.0.33
