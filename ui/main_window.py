@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
         self.insert_btn: QPushButton | None = None
         self.rollback_btn: QPushButton | None = None
         self.conn = None
+        self.cursor = None
 
         self.setup_ui()
         self.setup_connection_db()
@@ -105,8 +106,8 @@ class MainWindow(QMainWindow):
         name_val = self.name_le.text()
 
         try:
-            cursor = self.conn.cursor()
-            cursor.execute("INSERT INTO datos(nombre) VALUES (%s)", (name_val,))
+            self.cursor = self.conn.cursor()
+            self.cursor.execute("INSERT INTO datos(nombre) VALUES (%s)", (name_val,))
             self.statusBar().showMessage("Insertando...", 1000)
         except Exception as e:
             self.statusBar().showMessage(f"Error: {e}", 1000)
@@ -116,10 +117,12 @@ class MainWindow(QMainWindow):
         self.id_le.setText("")
         self.name_le.setText("")
         self.statusBar().showMessage("Transacción confirmada.", 1500)
+        self.cursor.close()
 
     def rollback(self):
         self.conn.rollback()
         self.id_le.setText("")
         self.name_le.setText("")
         self.statusBar().showMessage("Transacción cancelada.", 1000)
+        self.cursor.close()
 
