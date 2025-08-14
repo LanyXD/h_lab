@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import QDialog, QVBoxLayout, QTableWidget, QTableWidgetItem
 
 
 class TableViewWindow(QDialog):
-    def __init__(self, data, columns, parent=None):
+    def __init__(self, data, columns, n, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Datos")
+        self.setWindowTitle(f"Tabla #{n}")
         self.resize(500, 300)
 
         layout = QVBoxLayout(self)

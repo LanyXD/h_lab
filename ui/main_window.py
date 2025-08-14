@@ -53,7 +53,8 @@ class MainWindow(QMainWindow):
     def clicked_create(self):
         new_conn = db.get_connection()
         if new_conn is not None:
-            new_form = FormWindow(new_conn)
+            n = len(self.conn_list) + 1
+            new_form = FormWindow(new_conn, n)
             self.conn_list.append(new_form)
             new_form.show()
             self.statusBar().showMessage("Conexion creada.")

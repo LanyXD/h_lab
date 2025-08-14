@@ -8,9 +8,10 @@ from ui.table_view_window import TableViewWindow
 
 
 class FormWindow(QMainWindow):
-    def __init__(self, conn):
+    def __init__(self, conn, n):
         super().__init__()
         self.flag: bool = True
+        self.n: int = n
         self.conn = conn
         self.cursor = conn.cursor()
         self.id_le: QLineEdit | None = None
@@ -36,7 +37,7 @@ class FormWindow(QMainWindow):
         self.setup_connections()
 
     def setup_window(self):
-        self.setWindowTitle("Form")
+        self.setWindowTitle(f"Form #{self.n}")
         self.resize(320, 400)
 
     def setup_central_widget(self):
@@ -158,7 +159,7 @@ class FormWindow(QMainWindow):
             rows = self.cursor.fetchall()
             columns = self.cursor.column_names
 
-            self.table_window = TableViewWindow(rows, columns, self)
+            self.table_window = TableViewWindow(rows, columns, self.n, self)
             self.table_window.exec()
 
         except Exception as e:
