@@ -1,16 +1,16 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLabel,
-    QPushButton,
-    QLineEdit, QStatusBar, QMainWindow, QComboBox, QHBoxLayout
+    QWidget, QVBoxLayout, QMainWindow,
+    QLabel, QPushButton, QLineEdit,
+    QStatusBar, QComboBox, QHBoxLayout
 )
+from ui.table_view_window import TableViewWindow
 
 
 class FormWindow(QMainWindow):
     def __init__(self, conn):
         super().__init__()
+        self.flag: bool = True
         self.conn = conn
         self.cursor = conn.cursor()
         self.id_le: QLineEdit | None = None
@@ -25,6 +25,7 @@ class FormWindow(QMainWindow):
         self.combo_isolation: QComboBox | None = None
         self.view_isolation_btn: QPushButton | None = None
         self.change_btn: QPushButton | None = None
+        self.table_window: TableViewWindow | None = None
 
         self.setup_ui()
 
@@ -97,6 +98,11 @@ class FormWindow(QMainWindow):
         self.rollback_btn = QPushButton(self)
         self.rollback_btn.setText("Rollback")
 
+        self.view_btn.setEnabled(False)
+        self.insert_btn.setEnabled(False)
+        self.commit_btn.setEnabled(False)
+        self.rollback_btn.setEnabled(False)
+
         button_layout.addWidget(self.start_btn)
         button_layout.addWidget(self.view_btn)
         button_layout.addWidget(self.insert_btn)
@@ -132,26 +138,50 @@ class FormWindow(QMainWindow):
 
     # Botones
     def view_isolation(self):
-        pass
+        self.cursor.execute("SELECT @@transaction_isolation")
+        isolation_level = self.cursor.fetchone()[0]
+        self.statusBar().showMessage(f"El nivel de aislamiento es {isolation_level}", 1000)
 
     def change(self):
-        pass
+        isolation_level = self.combo_isolation.currentText()
+        self.cursor.execute(f"SET SESSION TRANSACTION ISOLATION LEVEL {isolation_level}")
+        self.statusBar().showMessage(f"Cambiado a {isolation_level}", 1000)
 
     def start(self):
+        self.state()
         self.conn.start_transaction()
         self.statusBar().showMessage("Transacción iniciada", 1000)
 
     def view(self):
-        pass
+        try:
+            self.cursor.execute("SELECT * FROM datos")
+            rows = self.cursor.fetchall()
+            columns = self.cursor.column_names
+
+            self.table_window = TableViewWindow(rows, columns, self)
+            self.table_window.exec()
+
+        except Exception as e:
+            self.statusBar().showMessage(f"Error: {e}", 2000)
 
     def insert(self):
-        id_val = self.id_le.text()
+        id_val = self.id_le.text().strip()
         name_val = self.name_le.text()
 
         try:
-            self.cursor = self.conn.cursor()
-            self.cursor.execute("INSERT INTO datos(nombre) VALUES (%s)", (name_val,))
-            self.statusBar().showMessage("Insertando...", 1000)
+            if id_val == "":
+                self.cursor.execute(
+                    "INSERT INTO datos (nombre) VALUES (%s)",
+                    (name_val,)
+                )
+                self.statusBar().showMessage("Registro insertado", 1000)
+            else:
+                self.cursor.execute("""
+                    INSERT INTO datos (id, nombre)
+                    VALUES (%s, %s)
+                    ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)
+                    """, (id_val, name_val))
+                self.statusBar().showMessage("Registro insertado/actualizado", 1000)
         except Exception as e:
             self.statusBar().showMessage(f"Error: {e}", 1000)
 
@@ -159,12 +189,30 @@ class FormWindow(QMainWindow):
         self.conn.commit()
         self.id_le.setText("")
         self.name_le.setText("")
+        self.state()
         self.statusBar().showMessage("Transacción confirmada.", 1500)
-        self.cursor.close()
 
     def rollback(self):
         self.conn.rollback()
         self.id_le.setText("")
         self.name_le.setText("")
+        self.state()
         self.statusBar().showMessage("Transacción cancelada.", 1000)
-        self.cursor.close()
+
+    def state(self):
+        if self.flag:
+            self.start_btn.setEnabled(False)
+            self.change_btn.setEnabled(False)
+            self.view_btn.setEnabled(True)
+            self.insert_btn.setEnabled(True)
+            self.commit_btn.setEnabled(True)
+            self.rollback_btn.setEnabled(True)
+            self.flag = False
+        else:
+            self.start_btn.setEnabled(True)
+            self.change_btn.setEnabled(True)
+            self.view_btn.setEnabled(False)
+            self.insert_btn.setEnabled(False)
+            self.commit_btn.setEnabled(False)
+            self.rollback_btn.setEnabled(False)
+            self.flag = True
